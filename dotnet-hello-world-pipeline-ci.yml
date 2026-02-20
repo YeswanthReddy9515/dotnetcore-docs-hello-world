@@ -13,7 +13,7 @@ steps:
   displayName: 'Install .NET SDK 6'
   inputs:
     packageType: 'sdk'
-    version: '6.x'
+    version: '8.x'
 
 # 2️⃣ Restore dependencies
 - task: DotNetCoreCLI@2
@@ -38,28 +38,6 @@ steps:
     projects: '**/*[Tt]ests/*.csproj'
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
     publishTestResults: true
-
-# 5️⃣ Optional: List coverage files for debugging
-- powershell: |
-    Write-Host "Searching for coverage files..."
-    Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "coverage.cobertura.xml" | ForEach-Object { Write-Host $_.FullName }
-  displayName: 'List coverage files'
-
-# 6️⃣ Generate Cobertura code coverage report using ReportGenerator global tool
-- powershell: |
-    Write-Host "Installing ReportGenerator global tool v5.4.13..."
-    dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.4.13
-
-    # Add global tools to PATH
-    $env:PATH = "$env:USERPROFILE\.dotnet\tools;" + $env:PATH
-
-    Write-Host "Generating Cobertura report..."
-    dotnet reportgenerator `
-      -reports:"**/TestResults/*/coverage.cobertura.xml" `
-      -targetdir:"$(Build.ArtifactStagingDirectory)/CoverageReport" `
-      -reporttypes:"Cobertura,HtmlInline_AzurePipelines"
-  displayName: 'Generate Cobertura code coverage report'
-
 # 7️⃣ Publish code coverage results using v2 (recommended)
 - task: PublishCodeCoverageResults@2
   displayName: 'Publish Code Coverage Results'
