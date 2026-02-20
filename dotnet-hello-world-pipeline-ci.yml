@@ -10,7 +10,7 @@ variables:
 steps:
 # 1️⃣ Install .NET SDK
 - task: UseDotNet@2
-  displayName: 'Install .NET SDK'
+  displayName: 'Install .NET SDK 6'
   inputs:
     packageType: 'sdk'
     version: '6.x'
@@ -39,16 +39,22 @@ steps:
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
     publishTestResults: true
 
-# 5️⃣ Generate Cobertura code coverage report using ReportGenerator task
+# 5️⃣ List coverage files (optional debug step)
+- powershell: |
+    Write-Host "Searching for coverage files..."
+    Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "coverage.cobertura.xml" | ForEach-Object { Write-Host $_.FullName }
+  displayName: 'List coverage files'
+
+# 6️⃣ Generate Cobertura code coverage report
 - task: ReportGenerator@5
   displayName: 'Generate Cobertura code coverage report'
   inputs:
-    reports: '**/TestResults/*/coverage.cobertura.xml'   # Path to coverage files
-    targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport' # Output folder
-    reporttypes: 'Cobertura;HtmlInline_AzurePipelines'   # Generate Cobertura XML + HTML report
+    reports: '**/TestResults/*/coverage.cobertura.xml'
+    targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport'
+    reporttypes: 'Cobertura;HtmlInline_AzurePipelines'
     failTaskOnEmptyReports: true
 
-# 6️⃣ Publish code coverage results to Azure DevOps
+# 7️⃣ Publish code coverage results to Azure DevOps
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage Results'
   inputs:
@@ -57,7 +63,7 @@ steps:
     reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
     failIfCoverageEmpty: true
 
-# 7️⃣ Publish the project artifacts
+# 8️⃣ Publish the project artifacts
 - task: DotNetCoreCLI@2
   displayName: 'Publish project'
   inputs:
@@ -65,7 +71,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
-# 8️⃣ Publish build artifacts
+# 9️⃣ Publish build artifacts
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifacts'
   inputs:
