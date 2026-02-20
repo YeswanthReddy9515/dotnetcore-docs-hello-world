@@ -36,8 +36,7 @@ steps:
   inputs:
     command: 'test'
     projects: '**/*[Tt]ests/*.csproj'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
-    publishTestResults: true
+    arguments: '--configuration $(buildConfiguration)       /p:CollectCoverage=true       /p:CoverletOutputFormat=cobertura       /p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/'
 # 7️⃣ Publish code coverage results using v2 (recommended)
 - task: PublishCodeCoverageResults@2
   displayName: 'Publish Code Coverage Results'
