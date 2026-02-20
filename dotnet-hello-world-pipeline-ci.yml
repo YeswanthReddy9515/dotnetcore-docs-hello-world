@@ -8,21 +8,21 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-# Install .NET SDK
+# 1️⃣ Install .NET SDK
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
     version: '6.x'
 
-# Restore dependencies
+# 2️⃣ Restore dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore dependencies'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
 
-# Build the project
+# 3️⃣ Build the project
 - task: DotNetCoreCLI@2
   displayName: 'Build project'
   inputs:
@@ -30,7 +30,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
-# Run tests with coverage
+# 4️⃣ Run tests with code coverage
 - task: DotNetCoreCLI@2
   displayName: 'Run tests with code coverage'
   inputs:
@@ -39,11 +39,13 @@ steps:
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
     publishTestResults: true
 
-# List the TestResults folder to debug coverage file location
-- script: dir $(System.DefaultWorkingDirectory)\**\TestResults\ /s
-  displayName: 'List TestResults folder'
+# 5️⃣ Find coverage file(s) and show paths (debugging)
+- powershell: |
+    Write-Host "Searching for coverage files..."
+    Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "coverage.cobertura.xml" | ForEach-Object { Write-Host $_.FullName }
+  displayName: 'List coverage files'
 
-# Generate Cobertura XML report using ReportGenerator
+# 6️⃣ Generate Cobertura XML using ReportGenerator
 - task: DotNetCoreCLI@2
   displayName: 'Generate code coverage report'
   inputs:
@@ -51,7 +53,7 @@ steps:
     custom: 'tool'
     arguments: 'run dotnet-reportgenerator-globaltool -reports:**/TestResults/*/coverage.cobertura.xml -targetdir:$(Build.ArtifactStagingDirectory)/CoverageReport -reporttypes:Cobertura'
 
-# Publish code coverage to Azure DevOps
+# 7️⃣ Publish code coverage to Azure DevOps
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage Results'
   inputs:
@@ -60,7 +62,7 @@ steps:
     reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
     failIfCoverageEmpty: true
 
-# Publish the project
+# 8️⃣ Publish the project artifacts
 - task: DotNetCoreCLI@2
   displayName: 'Publish project'
   inputs:
@@ -68,7 +70,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
-# Publish build artifacts
+# 9️⃣ Publish build artifacts
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifacts'
   inputs:
