@@ -1,18 +1,18 @@
 trigger:
-- main # Triggers the pipeline on commits to the main branch
+- main
 
 pool:
-  vmImage: 'windows-latest' # Use a Microsoft-hosted Windows agent
+  vmImage: 'windows-latest'
 
 variables:
-  buildConfiguration: 'Release' # Define a variable for the build configuration
+  buildConfiguration: 'Release'
 
 steps:
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
-    version: '6.x' # Specify the desired .NET version
+    version: '6.x'
 
 - task: DotNetCoreCLI@2
   displayName: 'Restore dependencies'
@@ -28,11 +28,21 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
 
 - task: DotNetCoreCLI@2
-  displayName: 'Run tests'
+  displayName: 'Run tests with code coverage'
   inputs:
     command: 'test'
-    projects: '**/*[Tt]ests/*.csproj' # Target test projects
-    arguments: '--configuration $(buildConfiguration)'
+    projects: '**/*[Tt]ests/*.csproj'
+    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+    publishTestResults: true
+
+# Publish code coverage results
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish Code Coverage Results'
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/TestResults/**/coverage.cobertura.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/**/TestResults/**/CoverageReport'
+    failIfCoverageEmpty: true
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish project'
@@ -45,6 +55,5 @@ steps:
   displayName: 'Publish Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop' # Name the artifact 'drop'
+    ArtifactName: 'drop'
     publishLocation: 'Container'
-
