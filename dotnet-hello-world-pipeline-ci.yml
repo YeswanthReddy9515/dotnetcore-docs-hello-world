@@ -39,21 +39,16 @@ steps:
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
     publishTestResults: true
 
-# 5️⃣ Find coverage file(s) and show paths (debugging)
-- powershell: |
-    Write-Host "Searching for coverage files..."
-    Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "coverage.cobertura.xml" | ForEach-Object { Write-Host $_.FullName }
-  displayName: 'List coverage files'
-
-# 6️⃣ Generate Cobertura XML using ReportGenerator
-- task: DotNetCoreCLI@2
-  displayName: 'Generate code coverage report'
+# 5️⃣ Generate Cobertura code coverage report using ReportGenerator task
+- task: ReportGenerator@5
+  displayName: 'Generate Cobertura code coverage report'
   inputs:
-    command: 'custom'
-    custom: 'tool'
-    arguments: 'run dotnet-reportgenerator-globaltool -reports:**/TestResults/*/coverage.cobertura.xml -targetdir:$(Build.ArtifactStagingDirectory)/CoverageReport -reporttypes:Cobertura'
+    reports: '**/TestResults/*/coverage.cobertura.xml'   # Path to coverage files
+    targetdir: '$(Build.ArtifactStagingDirectory)/CoverageReport' # Output folder
+    reporttypes: 'Cobertura;HtmlInline_AzurePipelines'   # Generate Cobertura XML + HTML report
+    failTaskOnEmptyReports: true
 
-# 7️⃣ Publish code coverage to Azure DevOps
+# 6️⃣ Publish code coverage results to Azure DevOps
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage Results'
   inputs:
@@ -62,7 +57,7 @@ steps:
     reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
     failIfCoverageEmpty: true
 
-# 8️⃣ Publish the project artifacts
+# 7️⃣ Publish the project artifacts
 - task: DotNetCoreCLI@2
   displayName: 'Publish project'
   inputs:
@@ -70,7 +65,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
-# 9️⃣ Publish build artifacts
+# 8️⃣ Publish build artifacts
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifacts'
   inputs:
