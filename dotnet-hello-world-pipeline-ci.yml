@@ -8,18 +8,21 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+# Install .NET SDK
 - task: UseDotNet@2
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
     version: '6.x'
 
+# Restore dependencies
 - task: DotNetCoreCLI@2
   displayName: 'Restore dependencies'
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
 
+# Build the project
 - task: DotNetCoreCLI@2
   displayName: 'Build project'
   inputs:
@@ -27,6 +30,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration)'
 
+# Run tests with coverage
 - task: DotNetCoreCLI@2
   displayName: 'Run tests with code coverage'
   inputs:
@@ -35,15 +39,28 @@ steps:
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
     publishTestResults: true
 
-# Publish code coverage results
+# List the TestResults folder to debug coverage file location
+- script: dir $(System.DefaultWorkingDirectory)\**\TestResults\ /s
+  displayName: 'List TestResults folder'
+
+# Generate Cobertura XML report using ReportGenerator
+- task: DotNetCoreCLI@2
+  displayName: 'Generate code coverage report'
+  inputs:
+    command: 'custom'
+    custom: 'tool'
+    arguments: 'run dotnet-reportgenerator-globaltool -reports:**/TestResults/*/coverage.cobertura.xml -targetdir:$(Build.ArtifactStagingDirectory)/CoverageReport -reporttypes:Cobertura'
+
+# Publish code coverage to Azure DevOps
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage Results'
   inputs:
     codeCoverageTool: 'Cobertura'
-    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/TestResults/**/coverage.cobertura.xml'
-    reportDirectory: '$(System.DefaultWorkingDirectory)/**/TestResults/**/CoverageReport'
+    summaryFileLocation: '$(Build.ArtifactStagingDirectory)/CoverageReport/Cobertura.xml'
+    reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
     failIfCoverageEmpty: true
 
+# Publish the project
 - task: DotNetCoreCLI@2
   displayName: 'Publish project'
   inputs:
@@ -51,6 +68,7 @@ steps:
     projects: '**/*.csproj'
     arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
+# Publish build artifacts
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifacts'
   inputs:
