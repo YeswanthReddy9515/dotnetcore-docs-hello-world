@@ -8,7 +8,7 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-# 1️⃣ Install .NET SDK
+# 1️⃣ Install .NET SDK 6
 - task: UseDotNet@2
   displayName: 'Install .NET SDK 6'
   inputs:
@@ -39,13 +39,13 @@ steps:
     arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
     publishTestResults: true
 
-# 5️⃣ List coverage files (optional debug step)
+# 5️⃣ Optional: List coverage files for debugging
 - powershell: |
     Write-Host "Searching for coverage files..."
     Get-ChildItem -Path "$(System.DefaultWorkingDirectory)" -Recurse -Filter "coverage.cobertura.xml" | ForEach-Object { Write-Host $_.FullName }
   displayName: 'List coverage files'
 
-# 6️⃣ Generate Cobertura code coverage report
+# 6️⃣ Generate Cobertura code coverage report using ReportGenerator v5.4.x (compatible with .NET 6)
 - task: ReportGenerator@5
   displayName: 'Generate Cobertura code coverage report'
   inputs:
